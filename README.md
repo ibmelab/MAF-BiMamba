@@ -13,7 +13,7 @@ MAF-BiMamba is a novel multimodal architecture designed to bridge the gap betwee
 3. **Anatomically-Aware Regularization:** A novel Joint-Training I-JEPA framework with Semantic Block Masking to prevent overfitting, particularly for underrepresented classes.
 4. **Adaptive Clinical Workflow Control:** A dual-track inference strategy providing a lightweight Single Model (178 FPS) for real-time screening and a high-precision Ensemble track (35 FPS) for in-depth reference diagnosis.
 
-## ðŸ† Main Results
+## Ã°Å¸Ââ€  Main Results
 MAF-BiMamba achieves state-of-the-art performance on the HAM10000 dataset and demonstrates strong cross-dataset generalization on PAD-UFES-20 and ISIC 2019.
 
 | Dataset | Model Mode | Params | MACs | Accuracy (%) | AUC | Weighted F1 (%) | FPS |
@@ -52,7 +52,7 @@ data/
         â””â”€â”€ ...
 ```
 
-## ðŸ“ Project Structure
+## Ã°Å¸â€œÂ Project Structure
 
 ```text
 MAF-BiMamba/
@@ -72,7 +72,7 @@ MAF-BiMamba/
     â”œâ”€â”€ model.py                # MAF-BiMamba architecture (DenseNet Stem, Bi-Mamba, Adaptive FiLM)
     â””â”€â”€ utils.py                # Helper functions
 ```
-## âš™ï¸ Environment Setup
+## Ã¢Å¡â„¢Ã¯Â¸Â Environment Setup
 
 ```bash
 # 1. Create and activate a Conda environment
@@ -100,5 +100,5 @@ python scripts/train.py
 # (final_result.png, final_confusion_matrix.png, final_roc_curves.png)
 python scripts/run_ensemble_TTA.py
 ```
-## ðŸ¤ Contact
+## Ã°Å¸Â¤Â Contact
 Email: ibme.lab@gmail.com
