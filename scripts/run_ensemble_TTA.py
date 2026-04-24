@@ -11,11 +11,11 @@ from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 from scipy.optimize import minimize
 from sklearn.metrics import (
-    confusion_matrix, accuracy_score, cohen_kappa_score, f1_score, 
-    classification_report, roc_auc_score, roc_curve, auc, 
-    balanced_accuracy_score, recall_score
+    classification_report, accuracy_score, f1_score, confusion_matrix, roc_auc_score,
+    auc, roc_curve
 )
 from sklearn.preprocessing import label_binarize
+from sklearn.model_selection import StratifiedKFold
 import matplotlib.pyplot as plt
 import seaborn as sns
 from torch.amp import autocast
@@ -73,30 +73,37 @@ print("█"*70)
 # Load Data
 df_full = pd.read_csv(cfg.CSV_FILE)
 LABEL_MAP = {name: idx for idx, name in enumerate(sorted(df_full['dx'].unique()))}
-meta_processed, cat_dims, num_continuous = preprocess_metadata_for_transformer(df_full, df_full, df_full)
-
-# Fix tensor/dataframe index error
-if isinstance(meta_processed[0], torch.Tensor):
-    meta_df = meta_processed[0].cpu()
-else:
-    meta_df = meta_processed[0].reset_index(drop=True)
-
-ds = HAM10000Dataset(df_full, meta_df, cfg.IMG_ROOTS, LABEL_MAP, valid_tf)
-loader = DataLoader(ds, batch_size=64, shuffle=False, num_workers=4, pin_memory=True)
 
 evaluation_labels = df_full['dx'].map(LABEL_MAP).values
 ensemble_probs = np.zeros((len(df_full), len(CLASSES)))
 
-print(f"Running Inference for {N_FOLDS} Folds with Weighted TTA...")
+print(f"Running Out-of-Fold (OOF) Inference for {N_FOLDS} Folds with Weighted TTA...")
+
+skf = StratifiedKFold(n_splits=cfg.N_SPLITS, shuffle=True, random_state=cfg.SEED)
 
 # --- INFERENCE LOOP ---
-for fold_id in range(1, N_FOLDS + 1):
+for fold_idx, (train_idx, val_idx) in enumerate(skf.split(df_full, df_full['dx'])):
+    fold_id = fold_idx + 1
     ckpt_path = os.path.join(CHECKPOINT_DIR, f"best_fold{fold_id}.pth")
     if not os.path.exists(ckpt_path):
         print(f"⚠️ Skip Fold {fold_id} (Not found)")
         continue
         
     print(f"  -> Fold {fold_id} processing...", end=" ")
+    
+    # Extract Data for this fold
+    train_df = df_full.iloc[train_idx].reset_index(drop=True)
+    valid_df = df_full.iloc[val_idx].reset_index(drop=True)
+    
+    # Process metadata correctly for the fold
+    meta_processed, cat_dims, num_continuous = preprocess_metadata_for_transformer(train_df, valid_df)
+    _, val_tensor, _ = meta_processed
+    
+    # Build validation dataloader
+    ds_val = HAM10000Dataset(valid_df, val_tensor, cfg.IMG_ROOTS, LABEL_MAP, valid_tf)
+    loader_val = DataLoader(ds_val, batch_size=cfg.BATCH_SIZE * 2, shuffle=False, num_workers=4, pin_memory=True)
+    
+    # Load Model
     model = MAF_BiMamba(num_classes=len(LABEL_MAP), cat_dims=cat_dims, num_continuous=num_continuous, use_cross_scale=cfg.USE_CROSS_SCALE)
     model.to(DEVICE)
     try:
@@ -110,18 +117,17 @@ for fold_id in range(1, N_FOLDS + 1):
     
     fold_probs_list = []
     with torch.no_grad(), autocast('cuda'):
-        for imgs, metas, _ in tqdm(loader, leave=False):
+        for imgs, metas, _ in tqdm(loader_val, leave=False):
             imgs, metas = imgs.to(DEVICE), metas.to(DEVICE)
             probs = advanced_tta_inference(model, imgs, metas)
             fold_probs_list.append(probs.cpu().numpy())
     
-    ensemble_probs += np.concatenate(fold_probs_list)
+    # Write to OOF array
+    ensemble_probs[val_idx] = np.concatenate(fold_probs_list)
     del model
     torch.cuda.empty_cache()
     gc.collect()
 
-# Average across folds
-ensemble_probs /= N_FOLDS
 # Handle NaN just in case
 ensemble_probs = np.nan_to_num(ensemble_probs, nan=1.0/len(CLASSES))
 # =============================================================================
@@ -174,10 +180,6 @@ text_to_image(report_text, 'final_result.png')
 # =============================================================================
 # 5. VISUALIZATION
 # =============================================================================
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics import auc, roc_curve
-
 # A. CONFUSION MATRIX
 try:
     cm = confusion_matrix(evaluation_labels, final_preds)
