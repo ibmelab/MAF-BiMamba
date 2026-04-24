@@ -104,7 +104,7 @@ for fold_idx, (train_idx, val_idx) in enumerate(skf.split(df_full, df_full['dx']
     loader_val = DataLoader(ds_val, batch_size=cfg.BATCH_SIZE * 2, shuffle=False, num_workers=4, pin_memory=True)
     
     # Load Model
-    model = MAF_BiMamba(num_classes=len(LABEL_MAP), cat_dims=cat_dims, num_continuous=num_continuous, use_cross_scale=cfg.USE_CROSS_SCALE)
+    model = MAF_BiMamba(num_classes=len(LABEL_MAP), cat_dims=cat_dims, num_continuous=num_continuous, use_cross_scale=cfg.USE_CROSS_SCALE, use_film=getattr(cfg, 'USE_FILM', True))
     model.to(DEVICE)
     try:
         checkpoint = torch.load(ckpt_path, map_location=DEVICE)

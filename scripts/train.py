@@ -18,6 +18,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from sklearn.model_selection import StratifiedKFold
+from torch.utils.tensorboard import SummaryWriter
 
 # Import from .py modules in 'src'
 from src.config import cfg
@@ -32,7 +33,7 @@ seed_everything(cfg.SEED)
 
 def main():
     print("="*70)
-    print(f"MAIN TRAINING - V36 (Safe Mode + V-JEPA + Fixed Import)")
+    print(f"MAIN TRAINING - V36 (Safe Mode + I-JEPA + Fixed Import)")
     print(f"Dataset: HAM10000 | Folds: {cfg.FOLDS_TO_RUN}")
     print(f"RUNNING ON DEVICE: {cfg.DEVICE}")
     print("="*70)
@@ -100,8 +101,12 @@ def main():
             criterion = nn.CrossEntropyLoss(label_smoothing=cfg.LABEL_SMOOTHING).to(cfg.DEVICE)
             print(f"  Using CrossEntropyLoss (LS={cfg.LABEL_SMOOTHING}).")
         # --- 6. Model, Optimizer, Scheduler --
-        model = MAF_BiMamba(num_classes=cfg.NUM_CLASSES, cat_dims=cat_dims, num_continuous=num_continuous, use_cross_scale=cfg.USE_CROSS_SCALE).to(cfg.DEVICE)
+        model = MAF_BiMamba(num_classes=cfg.NUM_CLASSES, cat_dims=cat_dims, num_continuous=num_continuous, use_cross_scale=cfg.USE_CROSS_SCALE, use_film=cfg.USE_FILM).to(cfg.DEVICE)
         
+        # Init TensorBoard Writer if enabled
+        writer = None
+        if getattr(cfg, 'USE_TENSORBOARD', False):
+            writer = SummaryWriter(log_dir=os.path.join(cfg.OUTPUT_DIR, f"runs/MAF-BiMamba_Fold{fold_id+1}"))
         # Optimizer 4-part (Keep your logic)
         backbone_decay = []; backbone_no_decay = []; head_decay = []; head_no_decay = []
         for name, param in model.named_parameters():
@@ -166,7 +171,7 @@ def main():
         total_start_time = time.time()
 
         for epoch in range(1, cfg.EPOCHS + 1):
-            # train_one_epoch function in engine.py now has V-JEPA
+            # train_one_epoch function in engine.py now has I-JEPA
             train_loss = train_one_epoch(model, train_loader, criterion, optimizer, cfg.DEVICE, epoch, scheduler)
             val_loss, metrics = valid_one_epoch(model, val_loader, criterion, cfg.DEVICE)
             
@@ -180,7 +185,13 @@ def main():
                   f"Kappa: {metrics['Kappa']*100:.2f}% | F1-Score: {metrics['F1-Score']*100:.2f}% | "
                   f"Precision: {metrics['Precision']*100:.2f}% | Recall: {metrics['Recall']*100:.2f}% | "
                   f"Accuracy: {metrics['Accuracy']*100:.2f}%")
-            
+                  
+            if writer:
+                writer.add_scalar('Loss/Train', train_loss, epoch)
+                writer.add_scalar('Loss/Validation', val_loss, epoch)
+                writer.add_scalar('Metrics/Accuracy', metrics['Accuracy'], epoch)
+                writer.add_scalar('Metrics/Kappa', metrics['Kappa'], epoch)
+                writer.add_scalar('Metrics/F1-Score', metrics['F1-Score'], epoch)
             # Save Best
             if metrics['Kappa'] > best_kappa:
                 best_kappa = metrics['Kappa']
@@ -224,6 +235,9 @@ def main():
             'recall_per_class': metrics.get('recall_per_class', []) # Use get for safety
         })
         
+        if writer:
+            writer.close()
+            
         del model, train_loader, val_loader, optimizer, scheduler, criterion
         gc.collect()
         torch.cuda.empty_cache()
@@ -241,7 +255,7 @@ def main():
     print(metrics_df[columns_to_print].to_string())
     print(f"{'-'*80}")
 
-    # --- SUMMARY OF AVERAGE RESULTS (Mean ± Std) ---
+    # --- SUMMARY OF AVERAGE RESULTS (Mean Â± Std) ---
     if len(metrics_df) > 1:
         mean_kappa = metrics_df['kappa'].mean() * 100
         std_kappa = metrics_df['kappa'].std() * 100
@@ -252,12 +266,12 @@ def main():
         mean_acc = metrics_df['acc'].mean() * 100
         std_acc = metrics_df['acc'].std() * 100
         
-        print("--- Overall Average Summary (Mean ± Std) ---")
-        print(f"  > Average Kappa:    {mean_kappa:.2f}% ± {std_kappa:.2f}%")
-        print(f"  > Average F1-Score: {mean_f1:.2f}% ± {std_f1:.2f}%")
-        print(f"  > Average Accuracy: {mean_acc:.2f}% ± {std_acc:.2f}%")
+        print("--- Overall Average Summary (Mean Â± Std) ---")
+        print(f"  > Average Kappa:    {mean_kappa:.2f}% Â± {std_kappa:.2f}%")
+        print(f"  > Average F1-Score: {mean_f1:.2f}% Â± {std_f1:.2f}%")
+        print(f"  > Average Accuracy: {mean_acc:.2f}% Â± {std_acc:.2f}%")
 
-        print("\n  --- Average Class Recall (Mean ± Std) ---")
+        print("\n  --- Average Class Recall (Mean Â± Std) ---")
         try:
             # Convert list of arrays into one large numpy array to calculate average
             all_recalls = np.stack(metrics_df['recall_per_class'].to_numpy()) 
@@ -268,7 +282,7 @@ def main():
             
             for i in range(len(mean_recalls)):
                 class_name = inv_label_map.get(i, f"Class {i}").upper()
-                print(f"    > {class_name.ljust(6)}: {mean_recalls[i]:.2f}% ± {std_recalls[i]:.2f}%")
+                print(f"    > {class_name.ljust(6)}: {mean_recalls[i]:.2f}% Â± {std_recalls[i]:.2f}%")
         except Exception as e:
             print(f"    (Error calculating average recall: {e})")
         

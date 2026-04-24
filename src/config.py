@@ -31,8 +31,11 @@ class Config:
     IMG_SIZE = 224            # Keep 224x224 for safety and speed
     META_DIM = 256
     
-
+    # ============ ABLATION STUDY FLAGS ===========
     USE_CROSS_SCALE = False   # V36 is Single Stream, Cross Scale not needed
+    USE_FILM = True           # Toggle Adaptive FiLM module
+    USE_IJEPA = True          # Toggle Joint-Training I-JEPA
+    USE_TENSORBOARD = True    # Toggle TensorBoard logging
     
     # ============ REGULARIZATION (V36 - Stable) ===========
     META_DROPOUT = 0.15

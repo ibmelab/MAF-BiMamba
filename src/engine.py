@@ -1,5 +1,5 @@
 # ===============================================================
-# METRICS & TRAINING FUNCTIONS (V-JEPA Enhanced)
+# METRICS & TRAINING FUNCTIONS (I-JEPA Enhanced)
 # ===============================================================
 import sys
 import torch
@@ -11,10 +11,10 @@ from src.config import cfg
 from src.utils import compute_metrics
 from torch.amp import autocast, GradScaler 
 
-# --- 0. HELPER: SEMANTIC BLOCK MASKING (V-JEPA Style) ---
+# --- 0. HELPER: SEMANTIC BLOCK MASKING (I-JEPA Style) ---
 def generate_block_mask(img_size, mask_ratio=0.4):
         """
-        Generate large block masks (Block Masking) - V-JEPA Style.
+        Generate large block masks (Block Masking) - I-JEPA Style.
         """
         H, W = img_size
         mask = torch.ones((H, W), dtype=torch.float32)
@@ -45,15 +45,15 @@ def apply_masking(imgs, mask_ratio=0.4):
             
         return masked_imgs    
 
-# --- 1. TRAIN FUNCTION (V-JEPA ENABLED) ---
+# --- 1. TRAIN FUNCTION (I-JEPA ENABLED) ---
 def train_one_epoch(model, loader, criterion, optimizer, device, epoch, scheduler):
     model.train()
     total_loss = 0.0
     
     scaler = GradScaler(enabled=cfg.USE_AMP)
     
-    # V-JEPA Config
-    use_vjepa = True
+    # I-JEPA Config
+    use_IJEPA = cfg.USE_IJEPA
     mask_ratio = 0.4 
     consist_weight = 2.0 # Increase context learning weight
     
@@ -81,8 +81,8 @@ def train_one_epoch(model, loader, criterion, optimizer, device, epoch, schedule
             loss_final = loss_cls
             loss_consist_val = 0.0
 
-            # 2. Masked Pass (Student V-JEPA)
-            if use_vjepa:
+            # 2. Masked Pass (Student I-JEPA)
+            if use_IJEPA:
                 # Mask image
                 masked_imgs = apply_masking(imgs, mask_ratio=mask_ratio)
                 
@@ -160,4 +160,4 @@ def valid_one_epoch(model, loader, criterion, device):
     metrics = compute_metrics(np.concatenate(all_labels), np.concatenate(all_probs))
     return total_loss / len(loader.dataset), metrics
 
-print("Training Functions V36 (V-JEPA Feature Consistency) READY")
+print("Training Functions V36 (I-JEPA Feature Consistency) READY")

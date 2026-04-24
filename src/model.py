@@ -6,7 +6,7 @@ from mamba_ssm import Mamba
 from src.config import cfg 
 
 print("="*70)
-print(f"MODEL V36 - Single-Stream Bidirectional Mamba + V-JEPA Ready")
+print(f"MODEL V36 - Single-Stream Bidirectional Mamba + I-JEPA Ready")
 print("="*70)
 
 # ------------------------------------------------------------------
@@ -64,10 +64,12 @@ class AdaptiveFiLMLayer(nn.Module):
 # 2. BIDIRECTIONAL MAMBA BLOCK
 # ------------------------------------------------------------------
 class BidirectionalMambaBlock(nn.Module):
-    def __init__(self, d_model, condition_dim, dropout):
+    def __init__(self, d_model, condition_dim, dropout, use_film=True):
         super().__init__()
+        self.use_film = use_film
         self.norm = nn.LayerNorm(d_model)
-        self.film = AdaptiveFiLMLayer(d_model, condition_dim)
+        if self.use_film:
+            self.film = AdaptiveFiLMLayer(d_model, condition_dim)
         self.mamba_forward = Mamba(d_model=d_model, d_state=16, d_conv=4, expand=2)
         self.mamba_backward = Mamba(d_model=d_model, d_state=16, d_conv=4, expand=2)
         self.out_proj = nn.Linear(d_model, d_model)
@@ -75,7 +77,7 @@ class BidirectionalMambaBlock(nn.Module):
         
     def forward(self, x, meta_vec):
         x_norm = self.norm(x)
-        x_mod = self.film(x_norm, meta_vec)
+        x_mod = self.film(x_norm, meta_vec) if self.use_film else x_norm
         out_fwd = self.mamba_forward(x_mod)
         x_rev = torch.flip(x_mod, dims=[1])
         out_bwd = self.mamba_backward(x_rev)
@@ -84,10 +86,10 @@ class BidirectionalMambaBlock(nn.Module):
         return x + self.dropout(out_mixed)
 
 # ------------------------------------------------------------------
-# 3. SINGLE STREAM MODEL (V36 - UPDATED FOR V-JEPA)
+# 3. SINGLE STREAM MODEL (V36 - UPDATED FOR I-JEPA)
 # ------------------------------------------------------------------
 class MAF_BiMamba(nn.Module):
-    def __init__(self, num_classes, cat_dims, num_continuous, use_cross_scale=True):
+    def __init__(self, num_classes, cat_dims, num_continuous, use_cross_scale=True, use_film=True):
         super().__init__()
         self.num_continuous = num_continuous
         
@@ -107,7 +109,7 @@ class MAF_BiMamba(nn.Module):
         
         # 4. Mamba Tower
         self.layers = nn.ModuleList([
-            BidirectionalMambaBlock(self.D_MODEL, cfg.META_DIM, cfg.FUSION_DROPOUT)
+            BidirectionalMambaBlock(self.D_MODEL, cfg.META_DIM, cfg.FUSION_DROPOUT, use_film=use_film)
             for _ in range(6) 
         ])
         
@@ -161,6 +163,6 @@ class MAF_BiMamba(nn.Module):
         logits = self.fc_head(self.dropout_head(features))
         
         if return_feats:
-            return logits, features # Return both for V-JEPA
+            return logits, features # Return both for I-JEPA
             
         return logits
