@@ -27,35 +27,36 @@ MAF-BiMamba achieves state-of-the-art performance on the HAM10000 dataset and de
 
 ```text
 MAF-BiMamba/
+├── results/
+│   ├── final_confusion_matrix.png
+│   ├── final_result.png
+│   └── final_roc_curves.png
 ├── scripts/
-│   ├── train.py                # Main script for model training (supports V-JEPA)
-│   └── run_ensemble_TTA.py     # Inference using 5-fold ensemble with Weighted TTA
-├── src/
-│   ├── config.py               # Hyperparameters and path configurations
-│   ├── dataset.py              # Multimodal Dataset class for HAM10000/ISIC/PAD-UFES-20
-│   ├── augmentations.py        # Semantic Block Masking and standard augmentations
-│   ├── model.py                # MAF-BiMamba architecture (DenseNet Stem, Bi-Mamba, Adaptive FiLM)
-│   ├── engine.py               # Training and validation loops with EMA updates
-│   └── utils.py                # Helper functions
+│   ├── run_ensemble_TTA.py     # Inference using 5-fold ensemble with Weighted TTA
+│   └── train.py                # Main script for model training (supports V-JEPA)
+└── src/
+    ├── __init__.py
+    ├── augmentations.py        # Semantic Block Masking and standard augmentations
+    ├── config.py               # Hyperparameters and path configurations
+    ├── dataset.py              # Multimodal Dataset class for HAM10000/ISIC/PAD-UFES-20
+    ├── engine.py               # Training and validation loops with EMA updates
+    ├── model.py                # MAF-BiMamba architecture (DenseNet Stem, Bi-Mamba, Adaptive FiLM)
+    └── utils.py                # Helper functions
 ```
 ## ⚙️ Environment Setup
 
 ```bash
-# 1. Clone the repository
-git clone [https://github.com/TriLe1016/MAF-BiMamba.git](https://github.com/TriLe1016/MAF-BiMamba.git)
-cd MAF-BiMamba
-
-# 2. Create and activate a Conda environment
+# 1. Create and activate a Conda environment
 conda create -n maf-bimamba python=3.9 -y
 conda activate maf-bimamba
 
-# 3. Install PyTorch (Adjust CUDA version to match your hardware)
+# 2. Install PyTorch (Adjust CUDA version to match your hardware)
 pip install torch torchvision torchaudio --index-url [https://download.pytorch.org/whl/cu118](https://download.pytorch.org/whl/cu118)
 
-# 4. Install State Space Model dependencies
+# 3. Install State Space Model dependencies
 pip install mamba-ssm==1.1.0
 
-# 5. Install other requirements
+# 4. Install other requirements
 pip install -r requirements.txt 
 ```
 ## 🚀 Usage
@@ -70,16 +71,5 @@ python scripts/train.py
 # (final_result.png, final_confusion_matrix.png, final_roc_curves.png)
 python scripts/run_ensemble_TTA.py
 ```
-## 📜 Citation
-```bash
-@article{mafbimamba2026,
-  title={MAF-BiMamba: Integrating Bidirectional State Space Models with Adaptive Fusion for Skin Lesion Classification},
-  author={Anonymous Authors},
-  journal={Biomedical Signal Processing and Control (BSPC)},
-  year={2026}
-}
-```
 ## 🤝 Contact
-Author: Le Minh Tri
-Email: trileefaker@gmail.com
-GitHub: [@TriLe1016](https://github.com/TriLe1016)
+Email: ibme.lab@gmail.com
