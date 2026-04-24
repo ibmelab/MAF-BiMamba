@@ -1,4 +1,4 @@
-# MAF-BiMamba: Integrating Bidirectional State Space Models with Adaptive Fusion for Skin Lesion Classification
+# MAF-BiMamba: Integrating Multimodal Adaptive Fusion and Bidirectional State Space Models for Skin Lesion Classification
 
 [![Paper](https://img.shields.io/badge/Paper-PDF-red)](#) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -18,7 +18,7 @@ MAF-BiMamba achieves state-of-the-art performance on the HAM10000 dataset and de
 
 | Dataset | Model Mode | Params | MACs | Accuracy (%) | AUC | Weighted F1 (%) | FPS |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **HAM10000** | Single Model | 24.3M | ~4.2G | $95.67 \pm 0.28$ | $0.969 \pm 0.003$ | $96.01 \pm 0.31$ | **178** |
+| **HAM10000** | Single Model | 24.3M | ~4.2G | $95.67 \pm 0.28$ | $0.969 \pm 0.003$ | $96.01 \pm 0.26$ | **178** |
 | **HAM10000** | Ensemble (5-Fold + TTA) | 121.5M | ~21.0G | **$96.43 \pm 0.21$** | **$0.971 \pm 0.002$** | **$96.47 \pm 0.24$** | 35 |
 | **PAD-UFES-20** | Zero-shot Generalization | - | - | $89.45 \pm 0.52$ | $0.931 \pm 0.005$ | $88.67 \pm 0.55$ | - |
 | **ISIC 2019** (Disjoint)| Zero-shot Generalization | - | - | $87.85 \pm 0.48$ | $0.928 \pm 0.004$ | $87.15 \pm 0.50$ | - |
