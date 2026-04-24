@@ -6,7 +6,7 @@ from mamba_ssm import Mamba
 from src.config import cfg 
 
 print("="*70)
-print(f"MODEL V36 - 🔥 Single-Stream Bidirectional Mamba + V-JEPA Ready")
+print(f"MODEL V36 - Single-Stream Bidirectional Mamba + V-JEPA Ready")
 print("="*70)
 
 # ------------------------------------------------------------------
@@ -16,7 +16,7 @@ class OptimizedMetadataEncoder(nn.Module):
     def __init__(self, cat_dims, num_continuous, embed_dim=32, output_dim=cfg.META_DIM):
         super().__init__()
         self.num_continuous = num_continuous
-        # Lưu giới hạn để kẹp giá trị (Tránh lỗi Index Out of Bounds)
+        # Save limits to clamp values (Avoid Index Out of Bounds error)
         self.cat_limits = nn.Parameter(torch.tensor(cat_dims, dtype=torch.long), requires_grad=False)
         
         self.cat_embeddings = nn.ModuleList([nn.Embedding(num_classes, embed_dim) for num_classes in cat_dims])
@@ -35,10 +35,10 @@ class OptimizedMetadataEncoder(nn.Module):
         x_num = meta_tensor[:, :self.num_continuous]
         x_cat = meta_tensor[:, self.num_continuous:].long()
         
-        # --- 🔥 SAFE GUARD: Tự động sửa lỗi index ---
+        # --- SAFE GUARD: Automatically fix index errors ---
         for i in range(len(self.cat_embeddings)):
             limit = self.cat_limits[i]
-            # Kẹp giá trị trong khoảng [0, limit-1]
+            # Clamp value in range [0, limit-1]
             x_cat[:, i] = torch.clamp(x_cat[:, i], min=0, max=limit - 1)
         # ------------------------------------------
 
@@ -86,7 +86,7 @@ class BidirectionalMambaBlock(nn.Module):
 # ------------------------------------------------------------------
 # 3. SINGLE STREAM MODEL (V36 - UPDATED FOR V-JEPA)
 # ------------------------------------------------------------------
-class G_MMNet(nn.Module):
+class MAF_BiMamba(nn.Module):
     def __init__(self, num_classes, cat_dims, num_continuous, use_cross_scale=True):
         super().__init__()
         self.num_continuous = num_continuous
@@ -111,12 +111,12 @@ class G_MMNet(nn.Module):
             for _ in range(6) 
         ])
         
-        # 5. Classifier Head (Tách Norm ra để lấy Feature)
+        # 5. Classifier Head (Separate Norm to extract Feature)
         self.norm_head = nn.LayerNorm(self.D_MODEL)
         self.dropout_head = nn.Dropout(cfg.FUSION_DROPOUT)
         self.fc_head = nn.Linear(self.D_MODEL, num_classes)
 
-    def forward(self, img, meta, return_feats=False): # <--- Thêm cờ return_feats
+    def forward(self, img, meta, return_feats=False): # <--- Added return_feats flag
         B = img.shape[0]
         
         # A. Vision Stem
@@ -155,12 +155,12 @@ class G_MMNet(nn.Module):
         # D. Head
         x_pool = x_seq.mean(dim=1) 
         
-        # Lấy Feature Vector sạch (Trước khi vào lớp Classification cuối)
+        # Get clean Feature Vector (Before final Classification layer)
         features = self.norm_head(x_pool) 
         
         logits = self.fc_head(self.dropout_head(features))
         
         if return_feats:
-            return logits, features # Trả về cả hai cho V-JEPA
+            return logits, features # Return both for V-JEPA
             
         return logits

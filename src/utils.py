@@ -25,21 +25,21 @@ class FocalLoss(nn.Module):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
         self.reduction = reduction
-        # Tích hợp Label Smoothing vào CrossEntropyLoss (PyTorch hỗ trợ sẵn)
-        # Khi tính Focal, ta dùng CE loss đã smooth này làm cơ sở
+        # Integrate Label Smoothing into CrossEntropyLoss (PyTorch built-in)
+        # Use this smoothed CE loss as the base for calculating Focal loss
         self.ce_loss = nn.CrossEntropyLoss(reduction='none', label_smoothing=label_smoothing)
 
     def forward(self, inputs, targets):
         # inputs: (Batch, NumClasses) - Logits
-        # targets: (Batch) - Long/Int Labels (khi bỏ Mixup)
+        # targets: (Batch) - Long/Int Labels (without Mixup)
         
-        # Tính Cross Entropy (có sẵn Label Smoothing nếu config có)
+        # Calculate Cross Entropy (with Label Smoothing if configured)
         ce_loss = self.ce_loss(inputs, targets)
 
-        # Tính pt (xác suất dự đoán đúng lớp đó)
+        # Calculate pt (probability of correct class prediction)
         pt = torch.exp(-ce_loss)
         
-        # Công thức Focal Loss: (1 - pt)^gamma * CE
+        # Focal Loss formula: (1 - pt)^gamma * CE
         focal_loss_val = (1.0 - pt).pow(self.gamma) * ce_loss
         
         if self.reduction == 'mean':
@@ -49,7 +49,7 @@ class FocalLoss(nn.Module):
         else:
             return focal_loss_val
 
-# --- 2. METRICS (Giữ nguyên, sửa Recall tính tổng quát) ---
+# --- 2. METRICS (Kept original, updated Recall to be generalized) ---
 def compute_metrics(labels, probs):
     # labels: (N,)
     # probs: (N, NumClasses)
@@ -64,8 +64,8 @@ def compute_metrics(labels, probs):
         'Recall': recall_score(labels, preds, average='weighted', zero_division=0),
     }
     
-    # Tính Recall riêng từng lớp để in log cho chi tiết
-    # Trả về dạng list để bên train.py dễ tính trung bình
+    # Calculate separate Recall for each class for detailed logging
+    # Return as a list for easy averaging in train.py
     try:
         recall_per_class = recall_score(labels, preds, average=None, zero_division=0)
         metrics['recall_per_class'] = recall_per_class

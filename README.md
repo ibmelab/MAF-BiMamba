@@ -1,11 +1,11 @@
-# J-MambaNet: Integrating Bidirectional State Space Models with Adaptive Fusion for Skin Lesion Classification
+# MAF-BiMamba: Integrating Bidirectional State Space Models with Adaptive Fusion for Skin Lesion Classification
 
 [![Paper](https://img.shields.io/badge/Paper-PDF-red)](#) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repository contains the official PyTorch implementation of the paper **"J-MambaNet: Integrating Bidirectional State Space Models with Adaptive Fusion for Skin Lesion Classification"**.
+This repository contains the official PyTorch implementation of the paper **"MAF-BiMamba: Integrating Bidirectional State Space Models with Adaptive Fusion for Skin Lesion Classification"**.
 
 ## 📌 Overview
-J-MambaNet is a novel multimodal architecture designed to bridge the gap between high-performance computing and clinical workflows in dermatological diagnosis. It effectively integrates dermoscopic imagery with patient clinical metadata (age, sex, location) to resolve the "texture-context trade-off."
+MAF-BiMamba is a novel multimodal architecture designed to bridge the gap between high-performance computing and clinical workflows in dermatological diagnosis. It effectively integrates dermoscopic imagery with patient clinical metadata (age, sex, location) to resolve the "texture-context trade-off."
 
 ### Key Contributions:
 1. **Resolving the Texture-Context Trade-off:** A hybrid architecture combining a DenseNet Stem (to capture high-frequency visual cues like texture and borders) with Bidirectional Mamba blocks (to assess global lesion asymmetry).
@@ -14,7 +14,7 @@ J-MambaNet is a novel multimodal architecture designed to bridge the gap between
 4. **Adaptive Clinical Workflow Control:** A dual-track inference strategy providing a lightweight Single Model (178 FPS) for real-time screening and a high-precision Ensemble track (35 FPS) for in-depth reference diagnosis.
 
 ## 🏆 Main Results
-J-MambaNet achieves state-of-the-art performance on the HAM10000 dataset and demonstrates strong cross-dataset generalization on PAD-UFES-20 and ISIC 2019.
+MAF-BiMamba achieves state-of-the-art performance on the HAM10000 dataset and demonstrates strong cross-dataset generalization on PAD-UFES-20 and ISIC 2019.
 
 | Dataset | Model Mode | Accuracy (%) | AUC | Weighted F1 (%) | FPS |
 | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -26,16 +26,15 @@ J-MambaNet achieves state-of-the-art performance on the HAM10000 dataset and dem
 ## 📁 Project Structure
 
 ```text
-J-manbanet/
+MAF-BiMamba/
 ├── scripts/
 │   ├── train.py                # Main script for model training (supports V-JEPA)
-│   ├── run_ensemble_TTA.py     # Inference using 5-fold ensemble with Weighted TTA
-│   └── print_report.py         # Generate evaluation metrics and confusion matrices
+│   └── run_ensemble_TTA.py     # Inference using 5-fold ensemble with Weighted TTA
 ├── src/
 │   ├── config.py               # Hyperparameters and path configurations
 │   ├── dataset.py              # Multimodal Dataset class for HAM10000/ISIC/PAD-UFES-20
 │   ├── augmentations.py        # Semantic Block Masking and standard augmentations
-│   ├── model.py                # J-MambaNet architecture (DenseNet Stem, Bi-Mamba, Adaptive FiLM)
+│   ├── model.py                # MAF-BiMamba architecture (DenseNet Stem, Bi-Mamba, Adaptive FiLM)
 │   ├── engine.py               # Training and validation loops with EMA updates
 │   └── utils.py                # Helper functions
 ```
@@ -43,12 +42,12 @@ J-manbanet/
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/TriLe1016/J-manbanet.git](https://github.com/TriLe1016/J-manbanet.git)
-cd J-manbanet
+git clone [https://github.com/TriLe1016/MAF-BiMamba.git](https://github.com/TriLe1016/MAF-BiMamba.git)
+cd MAF-BiMamba
 
 # 2. Create and activate a Conda environment
-conda create -n jmambanet python=3.9 -y
-conda activate jmambanet
+conda create -n maf-bimamba python=3.9 -y
+conda activate maf-bimamba
 
 # 3. Install PyTorch (Adjust CUDA version to match your hardware)
 pip install torch torchvision torchaudio --index-url [https://download.pytorch.org/whl/cu118](https://download.pytorch.org/whl/cu118)
@@ -62,21 +61,19 @@ pip install -r requirements.txt
 ## 🚀 Usage
 ```bash
 # 1. Training
-# Train the J-MambaNet model from scratch using the Joint-Training V-JEPA strategy
+# Train the MAF-BiMamba model from scratch using the Joint-Training V-JEPA strategy
 python scripts/train.py
 
 # 2. Inference & Evaluation
-# Reproduce the best results using the 5-fold ensemble and weighted TTA strategy
+# Reproduce the best results using the 5-fold ensemble and weighted TTA strategy.
+# This script will evaluate the model and automatically generate all final reports
+# (final_result.png, final_confusion_matrix.png, final_roc_curves.png)
 python scripts/run_ensemble_TTA.py
-
-# 3. Generate Reports
-# Calculate detailed metrics (Precision, Recall, F1) and visualize confusion matrix
-python scripts/print_report.py
 ```
 ## 📜 Citation
 ```bash
-@article{jmambanet2026,
-  title={J-MambaNet: Integrating Bidirectional State Space Models with Adaptive Fusion for Skin Lesion Classification},
+@article{mafbimamba2026,
+  title={MAF-BiMamba: Integrating Bidirectional State Space Models with Adaptive Fusion for Skin Lesion Classification},
   author={Anonymous Authors},
   journal={Biomedical Signal Processing and Control (BSPC)},
   year={2026}
